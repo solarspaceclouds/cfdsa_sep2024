@@ -1,2 +1,4 @@
 # pre_course_assignment
-for Containers for Deployment and Scaling Pre-Course Assignment
+Prerequisite task for Containers for Deployment and Scaling Pre-Course Assignment
+
+
