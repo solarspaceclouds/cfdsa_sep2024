@@ -1,0 +1,97 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: 
+  name: codeserver-deploy
+  namespace: codeserver # 
+  labels:
+      app: codeserver-dep 
+spec: 
+  replicas: 1
+  selector: 
+      matchLabels: #  *It must match the pod template's labels.* 
+      # Deployment is going to manage pods with the following labels
+        app: codeserver-dep 
+  template:
+    metadata:
+      labels:
+        app: codeserver-dep 
+    spec: 
+      volumes: 
+      - name: workspace-vol
+        persistentVolumeClaim: 
+          claimName: codeserver-pvc
+      containers:
+      - name: codeserver-container
+        image: linuxserver/code-server@sha256:b0448d77791bc8fa30cc2ce2c983cbc8d5e7c7019d0c96034d14bffdc801004e  # linuxserver/code-server:4.92.2 # https://hub.docker.com/r/linuxserver/code-server/tags
+        imagePullPolicy: IfNotPresent
+        env: 
+        - name: PUID
+          value: "1000"
+        - name: PGID
+          value: "1000"
+        envFrom: 
+        - configMapRef:
+            name: codeserver-cm
+        - secretRef: 
+            name: codeserver-secret
+
+        # resource:
+        #   limits: 
+            ## 
+        ports:
+        - name: codeserver-port
+          containerPort: 8443
+        resources: # set limits: 256 MB of memory and 200 milli cores of CPU
+          requests:
+            cpu: "200m" 
+            memory: "256Mi"
+          limits:
+            cpu: "1"        # CPU in cores
+            memory: "1Gi"   # memory in GiB (Gigabytes)
+          
+---
+apiVersion: v1
+kind: Service
+metadata: 
+  name: codeserver-svc
+  namespace: codeserver
+  labels:
+    app: codeserver-dep
+    name: codeserver-svc
+spec: 
+  type: ClusterIP
+  selector: 
+    app: codeserver-dep
+  ports:
+  - port: 8443
+    targetPort: 8443
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata: 
+  name: codeserver-ing
+  namespace: codeserver
+  labels: 
+    app: codeserver-dep
+    name: codeserver-ing
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite: /$2
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+
+spec:
+  ingressClassName: nginx
+  rules:
+    # a rule specified by host and http
+    - host: code-146.190.201.185.nip.io # external IP of the loadbalancer; get from 'k get svc -A'
+      http: 
+        paths:
+        - path: / # endpoint: http://dov.146.190.201.185.nip.io/
+        # path: /v1(/|$)(.*)
+          pathType: Prefix
+          backend: 
+            service: # A clusterIP service
+              name: codeserver-svc 
+              port: 
+                number: 8443 # the service port
+

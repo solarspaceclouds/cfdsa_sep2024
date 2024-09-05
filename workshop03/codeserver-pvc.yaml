@@ -1,0 +1,42 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: codeserver-pvc
+  namespace: codeserver
+spec:
+  accessModes:
+  - ReadWriteOnce
+  # - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: do-block-storage  # get name by 'k get sc'
+---
+# apiVersion: v1
+# kind: Pod
+# metadata: 
+#   name: codeserver-po
+#   namespace: codeserver
+# spec: 
+#   volumes:
+#   - name: codeserver-vol
+#     persistentVolumeClaim: 
+#       claimName: codeserver-pvc
+#   containers: 
+#     - name : codeserver-container
+#       image: mysql:8
+#       env: 
+#       - name: SUDO_PASSWORD
+#         value: password
+#       ports: 
+#       - containerPort: 8443
+#       volumeMounts: 
+#       - name: codeserver-vol #
+#         # mountPath: /var/lib/mysql
+#         mountPath: /config/workspace
+#       resources: {}
+
+  # k apply -f mysql-pv.yaml
+  # k get pvc,pv
+  # k describe pvc/mysql-pvc
