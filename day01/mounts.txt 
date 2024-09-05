@@ -1,0 +1,37 @@
+# Bind mount
+mkdir /opt/tmp/mysql 
+# mkdir -p /opt/tmp/mysql
+
+docker run -d -p 3306:3306 \
+    --mount type=bind,source=/opt/tmp/mysql,target=/var/lib/mysql \
+    -e MYSQL_ROOT_PASSWORD=abc123 \
+    mysql:8
+
+docker run -d -p 3306:3306 \
+    --mount type=bind, src=<mount_point_path>, target=/var/lib/mysql \
+    -e MYSQL_ROOT_PASSWORD=abc123 \ 
+    mysql:8
+
+# restart container w the same location to reuse the database;
+# docker container inspect <containerID>
+
+
+# Volume mount
+# VOLUME MANAGEMENT
+# create a volume:
+docker volume create <volume-name> 
+
+docker volume inspect <volume-name>
+
+
+docker volume create db-vol 
+docker run -d -p 3306:3306 \
+    --mount type=volume, src=db-vol, dst=/var/lib/mysql \
+    -e MYSQL_ROOT_PASSWORD=abc123 \ 
+    mysql:8
+
+docker volume create db-vol 
+docker run -d -p 3306:3306 \
+    --mount type=volume, src=<volume-name>, dst=/var/lib/mysql \
+    -e MYSQL_ROOT_PASSWORD=abc123 \ 
+    mysql:8

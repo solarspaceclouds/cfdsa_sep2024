@@ -1,0 +1,226 @@
+apiVersion: v1
+items:
+- apiVersion: v1
+  kind: Namespace
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"v1","kind":"Namespace","metadata":{"annotations":{},"name":"dovns"}}
+    creationTimestamp: "2024-09-04T04:02:21Z"
+    labels:
+      kubernetes.io/metadata.name: dovns
+    name: dovns
+    resourceVersion: "340376"
+    uid: 1e7c63dc-da8f-4d57-97ef-4b4dcf669585
+  spec:
+    finalizers:
+    - kubernetes
+  status:
+    phase: Active
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{},"labels":{"app":"dov","name":"dov-svc"},"name":"dov-svc","namespace":"dovns"},"spec":{"ports":[{"port":3000,"targetPort":3000}],"selector":{"app":"dov","name":"dov-po"},"type":"ClusterIP"}}
+    creationTimestamp: "2024-09-04T04:02:22Z"
+    labels:
+      app: dov
+      name: dov-svc
+    name: dov-svc
+    namespace: dovns
+    resourceVersion: "340403"
+    uid: ae426424-b644-4124-a8fc-f440c1e9246a
+  spec:
+    clusterIP: 10.245.37.129
+    clusterIPs:
+    - 10.245.37.129
+    internalTrafficPolicy: Cluster
+    ipFamilies:
+    - IPv4
+    ipFamilyPolicy: SingleStack
+    ports:
+    - port: 3000
+      protocol: TCP
+      targetPort: 3000
+    selector:
+      app: dov
+      name: dov-po
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    annotations:
+      deployment.kubernetes.io/revision: "1"
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"labels":{"app":"dov","name":"dov-deploy"},"name":"dov-deploy","namespace":"dovns"},"spec":{"replicas":3,"selector":{"matchLabels":{"app":"dov","name":"dov-po"}},"template":{"metadata":{"labels":{"app":"dov","name":"dov-po"}},"spec":{"containers":[{"env":[{"name":"INSTANCE_NAME","valueFrom":{"fieldRef":{"fieldPath":"metadata.name"}}},{"name":"INSTANCE_HASH","valueFrom":{"fieldRef":{"fieldPath":"metadata.labels['pod-template-hash']"}}}],"image":"chukmunnlee/dov-bear:v5","name":"dov-container","ports":[{"containerPort":3000}]}]}}}}
+    creationTimestamp: "2024-09-04T04:02:21Z"
+    generation: 1
+    labels:
+      app: dov
+      name: dov-deploy
+    name: dov-deploy
+    namespace: dovns
+    resourceVersion: "340449"
+    uid: 26f27553-7909-4512-850c-40bc8ee51d8b
+  spec:
+    progressDeadlineSeconds: 600
+    replicas: 3
+    revisionHistoryLimit: 10
+    selector:
+      matchLabels:
+        app: dov
+        name: dov-po
+    strategy:
+      rollingUpdate:
+        maxSurge: 25%
+        maxUnavailable: 25%
+      type: RollingUpdate
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          app: dov
+          name: dov-po
+      spec:
+        containers:
+        - env:
+          - name: INSTANCE_NAME
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.name
+          - name: INSTANCE_HASH
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.labels['pod-template-hash']
+          image: chukmunnlee/dov-bear:v5
+          imagePullPolicy: IfNotPresent
+          name: dov-container
+          ports:
+          - containerPort: 3000
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+  status:
+    availableReplicas: 3
+    conditions:
+    - lastTransitionTime: "2024-09-04T04:02:25Z"
+      lastUpdateTime: "2024-09-04T04:02:25Z"
+      message: Deployment has minimum availability.
+      reason: MinimumReplicasAvailable
+      status: "True"
+      type: Available
+    - lastTransitionTime: "2024-09-04T04:02:21Z"
+      lastUpdateTime: "2024-09-04T04:02:25Z"
+      message: ReplicaSet "dov-deploy-69c489d74d" has successfully progressed.
+      reason: NewReplicaSetAvailable
+      status: "True"
+      type: Progressing
+    observedGeneration: 1
+    readyReplicas: 3
+    replicas: 3
+    updatedReplicas: 3
+- apiVersion: autoscaling/v2
+  kind: HorizontalPodAutoscaler
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"autoscaling/v2","kind":"HorizontalPodAutoscaler","metadata":{"annotations":{},"name":"dov-hpa","namespace":"dovns"},"spec":{"maxReplicas":8,"metrics":[{"resource":{"name":"memory","target":{"averageUtilization":30,"type":"Utilization"}},"type":"Resource"},{"resource":{"name":"cpu","target":{"averageUtilization":30,"type":"Utilization"}},"type":"Resource"}],"minReplicas":1,"scaleTargetRef":{"apiVersion":"apps/v1","kind":"Deployment","name":"dov-deploy"}}}
+    creationTimestamp: "2024-09-05T02:07:12Z"
+    name: dov-hpa
+    namespace: dovns
+    resourceVersion: "642320"
+    uid: 8281a82f-3765-42c3-8ae5-f935e995bd70
+  spec:
+    maxReplicas: 8
+    metrics:
+    - resource:
+        name: memory
+        target:
+          averageUtilization: 30
+          type: Utilization
+      type: Resource
+    - resource:
+        name: cpu
+        target:
+          averageUtilization: 30
+          type: Utilization
+      type: Resource
+    minReplicas: 1
+    scaleTargetRef:
+      apiVersion: apps/v1
+      kind: Deployment
+      name: dov-deploy
+  status:
+    conditions:
+    - lastTransitionTime: "2024-09-05T02:07:27Z"
+      message: the HPA controller was able to get the target's current scale
+      reason: SucceededGetScale
+      status: "True"
+      type: AbleToScale
+    - lastTransitionTime: "2024-09-05T02:07:27Z"
+      message: 'the HPA was unable to compute the replica count: failed to get memory
+        utilization: missing request for memory in container dov-container of Pod
+        dov-deploy-69c489d74d-gqshd'
+      reason: FailedGetResourceMetric
+      status: "False"
+      type: ScalingActive
+    currentMetrics:
+    - type: ""
+    - type: ""
+    currentReplicas: 3
+    desiredReplicas: 0
+- apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"networking.k8s.io/v1","kind":"Ingress","metadata":{"annotations":{"nginx.ingress.kubernetes.io/enable-cors":"true","nginx.ingress.kubernetes.io/rewrite":"/$2"},"labels":{"app":"dov","name":"dov-ing"},"name":"dov-ing","namespace":"dovns"},"spec":{"ingressClassName":"nginx","rules":[{"host":"dov.146.190.201.185.nip.io","http":{"paths":[{"backend":{"service":{"name":"dov-svc","port":{"number":3000}}},"path":"/","pathType":"Prefix"},{"backend":{"service":{"name":"dov-svc","port":{"number":3000}}},"path":"/search(/|$)(.*)","pathType":"ImplementationSpecific"}]}}]}}
+      nginx.ingress.kubernetes.io/enable-cors: "true"
+      nginx.ingress.kubernetes.io/rewrite: /$2
+    creationTimestamp: "2024-09-04T04:03:44Z"
+    generation: 4
+    labels:
+      app: dov
+      name: dov-ing
+    name: dov-ing
+    namespace: dovns
+    resourceVersion: "346136"
+    uid: 3996978f-8fc5-4bb7-b14c-128a59ccb377
+  spec:
+    ingressClassName: nginx
+    rules:
+    - host: dov.146.190.201.185.nip.io
+      http:
+        paths:
+        - backend:
+            service:
+              name: dov-svc
+              port:
+                number: 3000
+          path: /
+          pathType: Prefix
+        - backend:
+            service:
+              name: dov-svc
+              port:
+                number: 3000
+          path: /search(/|$)(.*)
+          pathType: ImplementationSpecific
+  status:
+    loadBalancer:
+      ingress:
+      - ip: 146.190.201.185
+kind: List
+metadata: {}

@@ -1,0 +1,147 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dovns
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dov-deploy
+  namespace: dovns
+  labels:
+    app: dov
+    name: dov-deploy
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: dov
+      name: dov-po
+  template:
+    metadata:
+      labels:
+        app: dov
+        name: dov-po
+    spec:
+      containers:
+      - name: dov-container
+        image: chukmunnlee/dov-bear:v5
+        env:
+        - name: INSTANCE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: INSTANCE_HASH
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['pod-template-hash']
+        ports:
+        - containerPort: 3000
+        resources:
+          requests:
+            cpu: "200m" 
+            memory: "256Mi"
+          limits:
+            cpu: "1"        # CPU in cores
+            memory: "1Gi"   # memory in GiB (Gigabytes)
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  # name: dov-svc
+  name: dov-hsvc
+  namespace: dovns
+  labels:
+    app: dov
+    name: dov-svc
+spec:
+  # type: ClusterIP
+  clusterIP: None
+  selector:
+    app: dov
+    name: dov-po
+  ports:
+  - port: 3000 # service port
+    targetPort: 3000
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata: 
+  name: dov-ing
+  namespace: dovns
+  labels: 
+    app: dov
+    name: dov-ing
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite: /$2
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+  
+  # # Canary-specific annotations: 
+  # annotations:
+  #   nginx.ingress.kubernetes.io/canary: "true"
+  #   nginx.ingress.kubernetes.io/canary-weight: "33"
+
+  # # annotation for authentication:
+  # nginx.ingress.kubernetes.io/auth-url: "http://auth
+  # svc.auth.svc.cluster.local:3000/jwt/validate"
+  # nginx.ingress.kubernetes.io/auth-method: POST
+
+spec:
+  ingressClassName: nginx
+  rules:
+    # a rule specified by host and http
+    - host: dov.146.190.201.185.nip.io # external IP of the loadbalancer; get from 'k get svc -A'
+      http: 
+        paths:
+        - path: / # endpoint: http://dov.146.190.201.185.nip.io/
+        # path: /v1(/|$)(.*)
+          pathType: Prefix
+          backend: 
+            service: # A clusterIP service
+              name: dov-svc 
+              port: 
+                number: 3000 # the service port
+        # - path: /search # endpoint: http://dov.146.190.201.185.nip.io/search
+        - path: /search(/|$)(.*)
+          pathType: ImplementationSpecific
+          # pathType: Prefix
+          backend: 
+            service: # A clusterIP service
+              name: dov-svc 
+              port: 
+                number: 3000 # the service port
+--- 
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: dov-hpa
+  namespace: dovns
+  
+spec: 
+  minReplicas: 1 
+  maxReplicas: 8
+# for scaling up and down # scaling policy: periodSeconds; type; value (% of abs num of pods)
+  scaleTargetRef: 
+    apiVersion: apps/v1
+    kind: Deployment
+    name: dov-deploy
+  metrics: 
+  - type: Resource
+    resource: 
+      name: memory 
+      target: 
+          type: Utilization
+          averageUtilization: 30
+  - type: Resource
+    resource:
+      name: cpu
+      target: 
+        type: Utilization
+        averageUtilization: 30
+
+
+

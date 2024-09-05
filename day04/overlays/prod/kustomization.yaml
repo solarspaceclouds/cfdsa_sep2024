@@ -1,0 +1,50 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# specify the yaml files in same dir which allow customization
+# prod
+resources: 
+- ../../base
+# - dov-ing.yaml
+
+# add new labels
+labels: 
+  - pairs: 
+      env: prod
+    includeSelectors: true 
+    includeTemplates: true
+
+namePrefix: prod- 
+namespace: prod-ns
+
+replicas: 
+- name: dov-deploy 
+  count: 3 
+
+images: 
+- name: chukmunnlee/dov-bear:v5
+  newTag: v5-prod 
+
+configMapGenerator:
+  - name: dov-cm
+    behavior: create 
+    literals:
+      - INSTANCE_NAME=prod-version
+  - files: 
+      - config.cnf=config.cnf
+patches: 
+- target:
+    group: apps
+    version: v1
+    kind: Deployment 
+    name: dov-deploy 
+  path: patch.yaml
+  # replace ingress hostname via patching;
+- target: 
+    group: networking.k8s.io 
+    version: v1 
+    kind: Ingress 
+    name: dov-ing 
+  path: patch-ing.yaml
+
+# replacement 

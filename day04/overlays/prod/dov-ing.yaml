@@ -1,0 +1,47 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata: 
+  name: dov-ing
+  namespace: dovns
+  labels: 
+    app: dov
+    name: dov-ing
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite: /$2
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+  
+  # # Canary-specific annotations: 
+  # annotations:
+  #   nginx.ingress.kubernetes.io/canary: "true"
+  #   nginx.ingress.kubernetes.io/canary-weight: "33"
+
+  # # annotation for authentication:
+  # nginx.ingress.kubernetes.io/auth-url: "http://auth
+  # svc.auth.svc.cluster.local:3000/jwt/validate"
+  # nginx.ingress.kubernetes.io/auth-method: POST
+
+spec:
+  ingressClassName: nginx
+  rules:
+    # a rule specified by host and http
+    - host: dov.146.190.201.185.nip.io # external IP of the loadbalancer; get from 'k get svc -A'
+      http: 
+        paths:
+        - path: / # endpoint: http://dov.146.190.201.185.nip.io/
+        # path: /v1(/|$)(.*)
+          pathType: Prefix
+          backend: 
+            service: # A clusterIP service
+              name: dov-svc 
+              port: 
+                number: 3000 # the service port
+        # - path: /search # endpoint: http://dov.146.190.201.185.nip.io/search
+        - path: /search(/|$)(.*)
+          pathType: ImplementationSpecific
+          # pathType: Prefix
+          backend: 
+            service: # A clusterIP service
+              name: dov-svc 
+              port: 
+                number: 3000 # the service port

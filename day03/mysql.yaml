@@ -1,0 +1,70 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config
+  namespace: default
+data: 
+  readme.txt: |
+    hello, world
+    hello, world
+    hello, world
+  values.yaml: | 
+    controller: 
+      image: 
+        image: fred/myimage  
+
+# Like Bind Mount; don't do this in practice [using hostPath]
+# any pod mounted on same (hostPath) directory would be able to access the node; --> security concern
+# administrators use this 
+# or can use this for certificates/public keys; but not recommended method;
+
+# emptyDir is like Docker volume; 
+# directory is tied to the lifetime of the Pod
+# run multiple copies of the Pod;--> each will have its own volume; 
+# for internal sharing of data
+
+# emptyDir and HostPath uses local node
+# emptyDir volume will be deleted when Pod is deleted
+---
+apiVersion: v1
+kind: Pod
+metadata: 
+  name: mysql-po
+  namespace: default
+spec: 
+  volumes:
+  - name: config-vol
+    configMap: 
+      name: config
+
+  # - name: data-vol # 
+    # hostPath: # creates directory in node's filesystem
+    #   path: /opt/data
+    #   type: DirectoryOrCreate
+    # emptyDir: {} 
+  containers: 
+    # - name: nginx-container
+    #   image: nginx
+    #   ports:
+    #   - containerPort: 80
+    #   volumeMounts:
+    #   - name: data-vol
+    #     mountPath: /opt/tmp
+    #   resource: {}
+    - name : mysql-container
+      image: mysql:8
+      env: 
+      - name: MYSQL_ROOT_PASSWORD
+        value: changit
+      ports: 
+      - containerPort:3306
+        # var/lib/mysql # volume to be created here
+      # volumeMounts: 
+      # - name: data-vol #
+      #   mountPath: /var/lib/mysql
+      volumeMounts: 
+      - name: config-vol #
+        mountPath: /opt/config
+        readOnly: true
+      resources: {}

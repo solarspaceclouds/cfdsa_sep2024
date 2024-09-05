@@ -1,0 +1,4 @@
+controller:
+  image:
+    image: fred/myimage
+    
