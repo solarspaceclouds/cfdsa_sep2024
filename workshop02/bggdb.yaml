@@ -1,0 +1,49 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: 
+  name: bggdb-deploy
+  namespace: bggns # 
+  labels:
+      app: bggdb
+      name: bggdb-po
+spec: 
+  replicas: 1
+  selector: 
+      matchLabels: #  *It must match the pod template's labels.* 
+      # Deployment is going to manage pods with the following labels
+        app: bggdb
+  template:
+    metadata:
+      name: bggdb-deploy
+      namespace: bggns 
+      labels:
+        app: bggdb
+        name: bggdb-po
+    spec: 
+      containers:
+      - name: bggdb-container
+        image: stackupiss/bgg-database:v1
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: db-port
+          containerPort: 3306
+
+---
+apiVersion: v1
+kind: Service
+metadata: 
+  name: bggdb-svc
+  namespace: bggns
+  labels:
+    app: bggdb
+    name: bggdb-svc
+spec: 
+  type: ClusterIP
+  selector: 
+    app: bggdb
+    name: bggdb-po
+  ports:
+  - port: 3306
+    targetPort: 3306
+

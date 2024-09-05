@@ -1,0 +1,98 @@
+--- 
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: bggns
+  labels: 
+    app: bgg
+    name: bggns
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bgg-cm
+  namespace: bggns
+  labels: 
+    app: bgg
+    name: bggns-cm
+data:
+  #valueFrom or
+  BGG_DB_USER: root
+  BGG_DB_HOST: bggdb-svc.bggns.svc.cluster.local # bggdb-svc  # or (full name)
+
+# ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: dov-deployment
+#   namespace: myns 
+#   labels:
+#     app: dov
+#     name: dov-depolyment
+# spec: 
+#   replicas: 5 # 3 worker nodes # Number of desired pods. 
+#   selector: 
+#     matchLabels: #  *It must match the pod template's labels.* 
+#     # Deployment is going to manage pods with the following labels
+#       app: myapp
+#       dept: eng 
+#       commit: abc123
+#   template: 
+#     metadata: # from this point onwards, copied from myns.yaml Pod section;
+#       name: mypod
+#       namespace: myns 
+#       labels:
+#         app: myapp
+#         dept: eng 
+#         commit: abc123
+#     spec: 
+#       containers:
+#       - name: mypod-container
+#         image: chukmunnlee/dov-bear@sha256:483038792aba29562a4d2044e790d7d3e7e6e6f684ce1fcafc3864949c000224 
+#         imagePullPolicy: IfNotPresent
+#         ports:
+#         - name: app-port
+#           containerPort: 3000
+#         env:
+#         - name: INSTANCE_NAME
+#           valueFrom: 
+#             fieldRef: 
+#               fieldPath: metadata.name # dov-deployment
+#           # value: my first pod 
+#         - name: INSTANCE_HASH
+#           # value: abc123
+#           valueFrom: 
+#             fieldRef: 
+#               fieldPath: metadata.labels['pod-template-hash']
+
+# ---
+# apiVersion: v1
+# kind: Service # namespace resource
+# metadata:
+#   name: dov-svc
+#   namespace: myns
+#   labels:
+#     app: dov
+#     name: dov-svc
+# spec: 
+#   type: ClusterIP # a service that exists only inside a cluster
+#   selector:
+#     app: myapp
+#     dept: eng 
+#     commit: abc123
+#   ports:
+#   - port: 8000 # the service port
+#     targetPort: app-port
+
+
+# k apply -f config.yaml
+# k apply -f bgg-secrets.yaml
+# k apply -f db-deploy.yaml
+# k apply -f be-deploy.yaml
+
+
+          
+
+
+
+

@@ -1,0 +1,65 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bggapp-deploy
+  namespace: bggns
+  labels: 
+    app: bggapp
+    name: bggapp-deploy
+spec:
+  replicas: 3
+  selector:
+    matchLabels: 
+      app: bggapp 
+      name: bggapp-po
+  template:
+    metadata: 
+      name: bggapp-pod
+      namespace: bggns
+      labels: 
+        app: bggapp
+        name: bggapp-po
+    spec:
+      # nodeSelector:
+      #   gpu-enabled: yes
+      containers: 
+      - name: bggapp-container
+        image: stackupiss/bgg-backend:v1 # change to this when doing rolling upgrade stackupiss/bgg-backend:v2
+        # can use json path .metadata.name for NAME
+        # can use .spec.containers[*].image # get all the containers via [*]
+        imagePullPolicy: IfNotPresent
+        envFrom: 
+        - configMapRef:
+            name: bgg-cm
+        - secretRef: 
+            name: bgg-secret
+        ports:
+        - containerPort: 3000
+        
+# k apply -f bggapp.yaml 
+# k port-forward deploy/bggapp-deploy -nbggns 3000:3000
+
+# k get no --show-labels | grep 'gpu-' 
+
+# k label no
+---
+apiVersion: v1
+kind: Service
+metadata: 
+  name: bggapp-svc
+  namespace: bggns
+  labels: 
+    app: bggapp
+    name: bggapp-svc
+spec: 
+  # type: ClusterIP
+  # type: NodePort #
+  type: LoadBalancer 
+  selector:
+    app: bggapp 
+    name: bggapp-po 
+  ports:
+  # - port: 3000
+  - port: 80
+    targetPort: 3000
